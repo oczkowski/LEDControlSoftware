@@ -103,25 +103,45 @@ void loop(){
   // Check if there is DATA for LED's
   if(!gRedis->exists(KEY_NAME_DATA)){
     // No data for LED's waiting for registration
-    Serial.println("No data for leds... Waiting 3 second...");
+    Serial.println("No data for leds... Waiting 500ms...");
+    wipeLEDs();
     colorFillHalf(CRGB::Red);
-    delay(3000);
+    delay(500);
   } else {
-    Serial.println("Found data for LED's... Checking again in 5 seconds....");
+    Serial.println("Found data for LED's... Checking again in 1 second....");
 
-    DynamicJsonDocument lightsConfig(1024);
+    DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
+    deserializeJson(ledsData, gRedis->get(KEY_NAME_DATA));
     
-    delay(5000);
-  }
+//    serializeJson(ledsData, Serial);
+//    Serial.println();
 
-  
-//  colorFill(CRGB::Red);
-//  colorFill(CRGB::Green);
-//  colorFill(CRGB::Blue);
-//  fillWhite();
-//  rainbowLoop();
+    UpdateLEDs(ledsData);
+    
+    delay(1000);
+  }
 }
 
+void UpdateLEDs(DynamicJsonDocument config){
+  // Config checkup
+//  if(data.length !== NUM_LEDS){
+//    Serial.println("Config entries don't match the number of LED's on the strip. Please make sure the configuration is correct.");
+//  }
+  // Processing data
+  for(int i = 0; i < NUM_LEDS; i++){
+    if(config["data"][i]){ // Does the config entry exist?
+      leds[i] = CRGBW(config["data"][i]["r"], config["data"][i]["g"], config["data"][i]["b"], config["data"][i]["w"]);
+    } 
+  }
+  FastLED.show();
+}
+
+void wipeLEDs(){
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CRGBW(0, 0, 0, 0);
+    FastLED.show();
+  }
+}
 
 
 
@@ -134,13 +154,6 @@ void colorFill(CRGB c){
 }
 
 void colorFillHalf(CRGB c){
-  for(int i = 0; i < NUM_LEDS; i += 2){
-    leds[i] = c;
-    FastLED.show();
-  }
-}
-
-void applyLEDdata(CRGB c){
   for(int i = 0; i < NUM_LEDS; i += 2){
     leds[i] = c;
     FastLED.show();
