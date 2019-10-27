@@ -1,0 +1,36 @@
+// General config
+#define KEY_NAME "bedroom"
+#define KEY_NAME_CONFIG "CONFIG_" KEY_NAME
+#define KEY_NAME_DATA "DATA_" KEY_NAME
+#define KEY_NAME_LC "LASTCONNECTION_" KEY_NAME
+#define LED_TYPE "SK6812"
+#define LOCATION "DESK"
+
+// NTP Client setup
+#define NTP_OFFSET   60 * 60      // In seconds
+#define NTP_INTERVAL 60 * 1000    // In miliseconds
+#define NTP_ADDRESS  "europe.pool.ntp.org"
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, NTP_ADDRESS, NTP_OFFSET, NTP_INTERVAL);
+
+// FastLED
+#define NUM_LEDS 72
+#define DATA_PIN 3
+#define BRIGHTNESS 128
+
+// WiFi
+#define WIFI_SSID "XXXXXXX"
+#define WIFI_PASS "XXXXXXX"
+WiFiClient redisConnection; // WiFi Client instance for redis
+byte mac[6];
+
+// Redis
+#define REDIS_ADDR "192.168.0.2"
+#define REDIS_PORT 6379
+#define REDIS_PASS ""
+Redis* gRedis = nullptr;
+
+// FastLED
+CRGBW leds[NUM_LEDS];
+CRGB *ledsRGB = (CRGB *) &leds[0];
+const uint8_t brightness = BRIGHTNESS;
