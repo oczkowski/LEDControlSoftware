@@ -113,26 +113,43 @@ void loop(){
     DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
     deserializeJson(ledsData, gRedis->get(KEY_NAME_DATA));
     
-//    serializeJson(ledsData, Serial);
-//    Serial.println();
+    int mode = ledsData["mode"].as<int>();
+    switch(mode){
+      case 0:
+        FillLEDs(ledsData);
+        break;
+      case 1:
+        rainbow();
+        break;
+      case 2:
+        rainbowLoop(ledsData);
+        break;
+      default:
+        Serial.println("Configuration exist but doesn't select any of the available modes.");
+        break;
+    }
 
-    UpdateLEDs(ledsData);
+    
     
     delay(1000);
   }
 }
 
-void UpdateLEDs(DynamicJsonDocument config){
-  // Config checkup
-//  if(data.length !== NUM_LEDS){
-//    Serial.println("Config entries don't match the number of LED's on the strip. Please make sure the configuration is correct.");
-//  }
+void FillLEDs(DynamicJsonDocument config){
+  // Variables
+  int dataLength = 0;
   // Processing data
   for(int i = 0; i < NUM_LEDS; i++){
     if(config["data"][i]){ // Does the config entry exist?
+      dataLength++;
       leds[i] = CRGBW(config["data"][i]["r"], config["data"][i]["g"], config["data"][i]["b"], config["data"][i]["w"]);
     } 
   }
+  // Warning if the array length wasn't equal to the LED count.
+  if(dataLength != NUM_LEDS){
+    Serial.println("Config entries don't match the number of LED's on the strip. Please make sure the configuration is correct.");
+  }
+  // Once the configuration has been done, show LED's from the new array.
   FastLED.show();
 }
 
@@ -141,32 +158,6 @@ void wipeLEDs(){
     leds[i] = CRGBW(0, 0, 0, 0);
     FastLED.show();
   }
-}
-
-
-
-void colorFill(CRGB c){
-  for(int i = 0; i < NUM_LEDS; i++){
-    leds[i] = c;
-    FastLED.show();
-  }
-  delay(1000);
-}
-
-void colorFillHalf(CRGB c){
-  for(int i = 0; i < NUM_LEDS; i += 2){
-    leds[i] = c;
-    FastLED.show();
-  }
-}
-
-void fillWhite(){
-  for(int i = 0; i < NUM_LEDS; i++){
-    leds[i] = CRGBW(0, 0, 0, 255);
-    FastLED.show();
-    delay(50);
-  }
-  delay(500);
 }
 
 void rainbow(){
@@ -179,12 +170,19 @@ void rainbow(){
   hue++;
 }
 
-void rainbowLoop(){
+void rainbowLoop(DynamicJsonDocument config){
   long millisIn = millis();
-  long loopTime = 5000; // 5 seconds
+  long loopTime = config["modeConfig"]["looptime"]; // 5 seconds
 
   while(millis() < millisIn + loopTime){
     rainbow();
     delay(5);
+  }
+}
+
+void colorFillHalf(CRGB c){
+  for(int i = 0; i < NUM_LEDS; i += 2){
+    leds[i] = c;
+    FastLED.show();
   }
 }
