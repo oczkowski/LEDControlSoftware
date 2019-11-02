@@ -66,7 +66,7 @@ void setup() {
   if(!gRedis->exists(KEY_NAME_CONFIG)){
     DynamicJsonDocument doc(1024);
     
-    doc["MAC_ADDRESS"] = WiFi.macAddress(mac);
+    doc["MAC_ADDRESS"] = WiFi.macAddress();
     doc["LED_TYPE"] = LED_TYPE;
     doc["LOCATION"] = LOCATION;
     doc["NUM_LEDS"] = NUM_LEDS;
@@ -128,10 +128,6 @@ void loop(){
         Serial.println("Configuration exist but doesn't select any of the available modes.");
         break;
     }
-
-    
-    
-    delay(1000);
   }
 }
 
