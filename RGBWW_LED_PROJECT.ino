@@ -36,6 +36,7 @@ void setup() {
   // Setup NTP Client
   timeClient.begin();
   timeClient.update();
+  timeClient.setTimeOffset(0); // Time zone GMT 0
   
   // Setting up Redis
   if (redisConnection.connect(REDIS_ADDR, REDIS_PORT))
@@ -66,7 +67,7 @@ void setup() {
   if(!gRedis->exists(KEY_NAME_CONFIG)){
     DynamicJsonDocument doc(1024);
     
-    doc["MAC_ADDRESS"] = WiFi.macAddress(mac);
+    doc["MAC_ADDRESS"] = WiFi.macAddress();
     doc["LED_TYPE"] = LED_TYPE;
     doc["LOCATION"] = LOCATION;
     doc["NUM_LEDS"] = NUM_LEDS;
@@ -93,12 +94,12 @@ void setup() {
 void loop(){
   // Update NTP time on each loop
   timeClient.update();
-  char time_and_date[16];
-  String timeadndate = timeClient.getFormattedTime();
-  timeadndate.toCharArray(time_and_date, 16);
+  formattedDate = timeClient.getEpochTime();
+  char * timeStamp = new char [formattedDate.length()+1];
+  strcpy (timeStamp, formattedDate.c_str());
   
   // Updating "last_connected";
-  gRedis->set(KEY_NAME_LC, time_and_date);
+  gRedis->set(KEY_NAME_LC, timeStamp);
   
   // Check if there is DATA for LED's
   if(!gRedis->exists(KEY_NAME_DATA)){
@@ -108,7 +109,7 @@ void loop(){
     colorFillHalf(CRGB::Red);
     delay(500);
   } else {
-    Serial.println("Found data for LED's... Checking again in 1 second....");
+    Serial.println("Found data for LED's... Checking again in 250ms...");
 
     DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
     deserializeJson(ledsData, gRedis->get(KEY_NAME_DATA));
@@ -128,10 +129,7 @@ void loop(){
         Serial.println("Configuration exist but doesn't select any of the available modes.");
         break;
     }
-
-    
-    
-    delay(1000);
+    delay(250);
   }
 }
 
