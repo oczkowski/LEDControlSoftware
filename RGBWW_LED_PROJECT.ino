@@ -12,6 +12,9 @@
 // Importing config
 #include "config.h"
 
+// JSON Object for LED's data
+DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
+
 void setup() {
   // Setting up
   Serial.begin(115200);
@@ -100,19 +103,20 @@ void loop(){
   
   // Updating "last_connected";
   gRedis->set(KEY_NAME_LC, timeStamp);
+  delay(200);
   
   // Check if there is DATA for LED's
   if(!gRedis->exists(KEY_NAME_DATA)){
+      delay(200);
     // No data for LED's waiting for registration
-    Serial.println("No data for leds... Waiting 500ms...");
+    Serial.println("No data for leds...");
     wipeLEDs();
     colorFillHalf(CRGB::Red);
-    delay(500);
   } else {
-    Serial.println("Found data for LED's... Checking again in 250ms...");
-
-    DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
+    Serial.println("Found data for LED's.");
+    
     deserializeJson(ledsData, gRedis->get(KEY_NAME_DATA));
+    delay(200);
     
     int mode = ledsData["mode"].as<int>();
     switch(mode){
@@ -129,23 +133,15 @@ void loop(){
         Serial.println("Configuration exist but doesn't select any of the available modes.");
         break;
     }
-    delay(250);
   }
 }
 
 void FillLEDs(DynamicJsonDocument config){
-  // Variables
-  int dataLength = 0;
   // Processing data
   for(int i = 0; i < NUM_LEDS; i++){
     if(config["data"][i]){ // Does the config entry exist?
-      dataLength++;
       leds[i] = CRGBW(config["data"][i]["r"], config["data"][i]["g"], config["data"][i]["b"], config["data"][i]["w"]);
     } 
-  }
-  // Warning if the array length wasn't equal to the LED count.
-  if(dataLength != NUM_LEDS){
-    Serial.println("Config entries don't match the number of LED's on the strip. Please make sure the configuration is correct.");
   }
   // Once the configuration has been done, show LED's from the new array.
   FastLED.show();
