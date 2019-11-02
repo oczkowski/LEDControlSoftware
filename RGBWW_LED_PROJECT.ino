@@ -109,7 +109,7 @@ void loop(){
     colorFillHalf(CRGB::Red);
     delay(500);
   } else {
-    Serial.println("Found data for LED's... Checking again in 1 second....");
+    Serial.println("Found data for LED's... Checking again in 250ms...");
 
     DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
     deserializeJson(ledsData, gRedis->get(KEY_NAME_DATA));
@@ -129,6 +129,7 @@ void loop(){
         Serial.println("Configuration exist but doesn't select any of the available modes.");
         break;
     }
+    delay(250);
   }
 }
 
