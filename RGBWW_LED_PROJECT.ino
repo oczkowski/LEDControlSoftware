@@ -36,6 +36,7 @@ void setup() {
   // Setup NTP Client
   timeClient.begin();
   timeClient.update();
+  timeClient.setTimeOffset(0); // Time zone GMT 0
   
   // Setting up Redis
   if (redisConnection.connect(REDIS_ADDR, REDIS_PORT))
@@ -93,12 +94,12 @@ void setup() {
 void loop(){
   // Update NTP time on each loop
   timeClient.update();
-  char time_and_date[16];
-  String timeadndate = timeClient.getFormattedTime();
-  timeadndate.toCharArray(time_and_date, 16);
+  formattedDate = timeClient.getEpochTime();
+  char * timeStamp = new char [formattedDate.length()+1];
+  strcpy (timeStamp, formattedDate.c_str());
   
   // Updating "last_connected";
-  gRedis->set(KEY_NAME_LC, time_and_date);
+  gRedis->set(KEY_NAME_LC, timeStamp);
   
   // Check if there is DATA for LED's
   if(!gRedis->exists(KEY_NAME_DATA)){
