@@ -14,6 +14,8 @@
 
 // JSON Object for LED's data
 DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
+//NTP timestamp string
+String formattedDate;
 
 void setup() {
   // Setting up
@@ -98,12 +100,14 @@ void loop(){
   // Update NTP time on each loop
   timeClient.update();
   formattedDate = timeClient.getEpochTime();
-  char * timeStamp = new char [formattedDate.length()+1];
-  strcpy (timeStamp, formattedDate.c_str());
+
+  char timeStamp[12];
+  formattedDate.toCharArray(timeStamp, 12);
+//  char * timeStamp = new char [formattedDate.length()+1];
+//  strcpy (timeStamp, formattedDate.c_str());
   
   // Updating "last_connected";
   gRedis->set(KEY_NAME_LC, timeStamp);
-  delay(200);
   
   // Check if there is DATA for LED's
   if(!gRedis->exists(KEY_NAME_DATA)){
