@@ -12,6 +12,9 @@
 // Importing config
 #include "config.h"
 
+// Cycle count for restart purposes
+int cycles = 0;
+
 // JSON Object for LED's data
 DynamicJsonDocument ledsData(20480); // This can handle up to 200 LEDs
 //NTP timestamp string
@@ -92,35 +95,35 @@ void setup() {
   // FastLED setup
   FastLED.addLeds<WS2812B, DATA_PIN, RGB>(ledsRGB, getRGBWsize(NUM_LEDS));
   FastLED.setBrightness(brightness);
-  FastLED.show();
+//  FastLED.show(); Show only when updating led's to prevent LEDs from flashing on restart
   
 }
 
 void loop(){
-  // Update NTP time on each loop
-  timeClient.update();
-  formattedDate = timeClient.getEpochTime();
-
-  char timeStamp[12];
-  formattedDate.toCharArray(timeStamp, 12);
-//  char * timeStamp = new char [formattedDate.length()+1];
-//  strcpy (timeStamp, formattedDate.c_str());
+  // Update time every "updateTimeCycle" number of cycles
+  if((cycles % updateTimeCycle) == 0){
+    // Update NTP time on each loop
+    timeClient.update();
+    formattedDate = timeClient.getEpochTime();
   
-  // Updating "last_connected";
-  gRedis->set(KEY_NAME_LC, timeStamp);
+    char timeStamp[12];
+    formattedDate.toCharArray(timeStamp, 12);
+    
+    // Updating "last_connected";
+    gRedis->set(KEY_NAME_LC, timeStamp);
+
+    Serial.println("Updating time: "+formattedDate);
+  }
   
   // Check if there is DATA for LED's
   if(!gRedis->exists(KEY_NAME_DATA)){
-      delay(200);
     // No data for LED's waiting for registration
     Serial.println("No data for leds...");
-    wipeLEDs();
     colorFillHalf(CRGB::Red);
   } else {
-    Serial.println("Found data for LED's.");
+    Serial.println("["+String(cycles)+"] Found data for LED's.");
     
     deserializeJson(ledsData, gRedis->get(KEY_NAME_DATA));
-    delay(200);
     
     int mode = ledsData["mode"].as<int>();
     switch(mode){
@@ -137,6 +140,13 @@ void loop(){
         Serial.println("Configuration exist but doesn't select any of the available modes.");
         break;
     }
+  }
+  // Restart cycle
+  cycles++;
+  if(cycles > maxCycles){
+    Serial.println("Max Cycle count reached. Restarting in 1 second...");
+    delay(1000);
+    ESP.restart();
   }
 }
 
