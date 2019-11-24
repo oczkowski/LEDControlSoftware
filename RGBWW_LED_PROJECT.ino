@@ -144,6 +144,10 @@ void loop(){
   // Restart cycle
   cycles++;
   if(cycles > maxCycles){
+    // When restarting, set the last connected to 0
+    char * zero = "0";
+    gRedis->set(KEY_NAME_LC, zero);
+    // Restart
     Serial.println("Max Cycle count reached. Restarting in 1 second...");
     delay(1000);
     ESP.restart();
